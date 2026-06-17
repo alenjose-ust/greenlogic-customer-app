@@ -1,7 +1,6 @@
-import axios from "axios";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import api from "../utils/api";
 
 // Define the shape of our form state
 interface FormData {
@@ -152,21 +152,13 @@ export default function RegisterScreen() {
         expoPushToken: pushToken, // Will be a string or null
       };
       console.log(payload);
-      // 3. Send to Node Backend
-      // IMPORTANT: Replace this IP with your computer's actual local IPv4 address!
-      // (e.g., 192.168.1.5 or 10.0.0.12). Do NOT use localhost.
-      const API_URL = "http://192.168.X.X:5000/api/users/register";
-
-      const response = await axios.post(API_URL, payload);
+      // 3. Send to Node Backend using shared axios instance
+      // Make sure to set the correct baseURL in src/utils/api.ts or call setApiBaseUrl at runtime.
+      const response = await api.post("/api/user/register", payload);
 
       if (response.status === 201) {
         Alert.alert("Success!", "Welcome to GreenLogic!");
-
-        // 4. Navigate to the main app/deals feed (assuming you create an app/deals.tsx next)
-        // router.push('/deals');
-
-        // For now, let's just go back to the home screen
-        router.push("/");
+        router.replace("/login" as Href);
       }
     } catch (error: any) {
       console.error(error);
