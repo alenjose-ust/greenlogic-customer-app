@@ -64,7 +64,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await api.post("/user/login", { email, password });
+      // Use same /api prefix as register route and avoid any accidental auth header on login
+      const response = await api.post("/api/user/login", { email, password });
 
       if (response.status === 200) {
         const { token, user } = response.data;
@@ -82,10 +83,19 @@ export default function LoginScreen() {
 
       setApiError("Unexpected response from server. Please try again.");
     } catch (error: any) {
-      console.error(error);
+      console.error("Login error", error);
+      // Helpful debugging info for mobile issues
+      const status = error?.response?.status;
+      const respData = error?.response?.data;
+      const req = error?.request;
+      console.log("response status", status);
+      console.log("response data", respData);
+      console.log("request", req);
+
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
+        respData?.message ||
+        respData?.error ||
+        error?.message ||
         "Invalid email or password. Please try again.";
       setApiError(message);
     } finally {

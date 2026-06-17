@@ -3,7 +3,7 @@ import axios from "axios";
 import { Platform } from "react-native";
 
 const DEFAULT_BASE_URL =
-  (process.env.API_URL as string) || "http://localhost:5000";
+  (process.env.API_URL as string) || "http://10.255.245.172:5000";
 const TOKEN_KEY = "auth_token";
 
 const api = axios.create({
@@ -76,6 +76,13 @@ export const initAuthFromStorage = async () => {
 // Request interceptor — attach token from memory (or storage on first use)
 api.interceptors.request.use(
   async (config) => {
+    // Allow callers to skip attaching Authorization header by setting either
+    // config.skipAuth = true or passing header 'x-skip-auth'. Used for login/register endpoints.
+    const skipAuth =
+      (config as any)?.skipAuth || (config.headers as any)?.["x-skip-auth"];
+    if (skipAuth) {
+      return config;
+    }
     try {
       if (!inMemoryToken) {
         const stored = await readStoredToken();
