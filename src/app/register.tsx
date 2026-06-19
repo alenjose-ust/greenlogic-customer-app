@@ -151,7 +151,7 @@ export default function RegisterScreen() {
         password: formData.password,
         expoPushToken: pushToken, // Will be a string or null
       };
-      console.log(payload);
+      alert(JSON.stringify(payload));
       // 3. Send to Node Backend using shared axios instance
       // Make sure to set the correct baseURL in src/utils/api.ts or call setApiBaseUrl at runtime.
       const response = await api.post("/api/user/register", payload);
