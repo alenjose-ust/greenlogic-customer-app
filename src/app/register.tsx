@@ -67,59 +67,58 @@ export default function RegisterScreen() {
     return undefined;
   };
 
-  // Helper to grab the Expo Push Token for the AI Cron Job
   const getPushTokenAsync = async (): Promise<string | null> => {
-    let token = null;
-
-    // On web, Expo Push Notifications require a `notification.vapidPublicKey` in app.json.
-    // Avoid requesting a token here so we don't trigger a CodedError when running in a browser.
-    // If you want web push, add the vapidPublicKey to app.json per Expo docs.
+    console.log(
+      "getPushTokenAsync start, Platform:",
+      Platform.OS,
+      "isDevice:",
+      Device.isDevice,
+    );
     if (Platform.OS === "web") {
-      console.log(
-        "Skipping push token request on web. To enable web push set notification.vapidPublicKey in app.json",
-      );
+      console.log("Skipping web");
+      return null;
+    }
+    if (!Device.isDevice) {
+      console.warn("Not a physical device — push token unavailable");
+      Alert.alert("Notice", "Push notifications require a physical device.");
       return null;
     }
 
-    if (Device.isDevice) {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== "granted") {
+    try {
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      console.log("existing permissions:", existing);
+      let finalStatus = existing;
+      if (existing !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
+        console.log("after request permissions:", finalStatus);
       }
 
-      if (finalStatus === "granted") {
-        try {
-          // In Expo SDK 50+, projectId is strictly required if you use EAS build.
-          // If you get an error here, pass { projectId: 'your-project-id-from-app-json' }
-          const tokenData = await Notifications.getExpoPushTokenAsync();
-          token = tokenData.data;
-        } catch (e) {
-          console.warn("Failed to get push token", e);
-        }
-      } else {
-        Alert.alert(
-          "Notice",
-          "You disabled notifications. You will miss out on Flash Deals!",
-        );
+      if (finalStatus !== "granted") {
+        console.warn("Permissions not granted for notifications");
+        Alert.alert("Notice", "Notifications permission not granted.");
+        return null;
       }
-    } else {
-      console.log("Must use a physical device for Push Notifications");
-    }
 
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#FF231F7C",
-      });
-    }
+      // On Android, ensure channel is set
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+        });
+      }
 
-    return token;
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      console.log("tokenData:", tokenData);
+      return tokenData.data ?? null;
+    } catch (err) {
+      console.error("Failed to get push token", err);
+      Alert.alert(
+        "Notice",
+        "Could not get push token. See console for details.",
+      );
+      return null;
+    }
   };
 
   const handleRegister = async () => {
