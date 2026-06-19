@@ -113,10 +113,7 @@ export default function RegisterScreen() {
       return tokenData.data ?? null;
     } catch (err) {
       console.error("Failed to get push token", err);
-      Alert.alert(
-        "Notice",
-        "Could not get push token. See console for details.",
-      );
+      Alert.alert("Notice", JSON.stringify(err));
       return null;
     }
   };
