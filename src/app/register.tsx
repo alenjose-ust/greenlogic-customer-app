@@ -68,12 +68,7 @@ export default function RegisterScreen() {
   };
 
   const getPushTokenAsync = async (): Promise<string | null> => {
-    console.log(
-      "getPushTokenAsync start, Platform:",
-      Platform.OS,
-      "isDevice:",
-      Device.isDevice,
-    );
+    Alert.alert("getPush", Platform.OS + "--" + Device.isDevice);
     if (Platform.OS === "web") {
       console.log("Skipping web");
       return null;
@@ -91,7 +86,7 @@ export default function RegisterScreen() {
       if (existing !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-        console.log("after request permissions:", finalStatus);
+        Alert.alert("after request permissions:", finalStatus);
       }
 
       if (finalStatus !== "granted") {
@@ -109,7 +104,7 @@ export default function RegisterScreen() {
       }
 
       const tokenData = await Notifications.getExpoPushTokenAsync();
-      console.log("tokenData:", tokenData);
+      Alert.alert("tokenData:", JSON.stringify(tokenData));
       return tokenData.data ?? null;
     } catch (err) {
       console.error("Failed to get push token", err);
