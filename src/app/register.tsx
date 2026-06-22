@@ -152,11 +152,25 @@ export default function RegisterScreen() {
         router.replace("/login" as Href);
       }
     } catch (error: any) {
-      console.error(error);
+      console.error("Registration error", error);
+      const status = error?.response?.status;
+      const respData = error?.response?.data;
+      console.log("registration response status", status);
+      console.log("registration response data", respData);
+
+      const serverMessage =
+        respData?.message || respData?.error || respData?.code || null;
+
       const errorMessage =
-        error.response?.data?.error ||
+        serverMessage ||
+        error?.message ||
         "Something went wrong during registration.";
-      Alert.alert("Registration Failed", errorMessage);
+
+      // Show more context so you can debug mobile vs web differences
+      Alert.alert(
+        "Registration Failed",
+        `${errorMessage}${status ? ` (status ${status})` : ""}`,
+      );
     } finally {
       setIsLoading(false);
     }
