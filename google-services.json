@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "103540903531",
+    "project_id": "smart-expiry-99a48",
+    "storage_bucket": "smart-expiry-99a48.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103540903531:android:6b001ddalelaa84e40eb2e",
+        "android_client_info": {
+          "package_name": "com.alenjoz.customerappreactnative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPjl02fQhGLeJIJD_wJMCl-3NTVvP08p8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
