@@ -1,6 +1,7 @@
+import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { Href, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,7 +14,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../utils/api";
 
 // Define the shape of our form state
 interface FormData {
@@ -68,47 +68,108 @@ export default function RegisterScreen() {
   };
 
   const getPushTokenAsync = async (): Promise<string | null> => {
-    Alert.alert("getPush", Platform.OS + "--" + Device.isDevice);
+    // Web — skip
     if (Platform.OS === "web") {
-      console.log("Skipping web");
-      return null;
-    }
-    if (!Device.isDevice) {
-      console.warn("Not a physical device — push token unavailable");
-      Alert.alert("Notice", "Push notifications require a physical device.");
+      Alert.alert(
+        "Push Debug",
+        "Running on web — skipping push token request.",
+      );
       return null;
     }
 
+    // Must be physical device
+    if (!Device.isDevice) {
+      Alert.alert(
+        "Push Debug",
+        "Not a physical device — push token unavailable.",
+      );
+      return null;
+    }
+
+    // App ownership (Expo Go vs standalone)
     try {
+      const appOwnership = Constants.appOwnership; // 'expo' | 'standalone' | 'guest'
+      Alert.alert("Push Debug", `App ownership: ${appOwnership}`);
+
       const { status: existing } = await Notifications.getPermissionsAsync();
-      console.log("existing permissions:", existing);
+      Alert.alert("Push Debug", `Existing permission: ${existing}`);
+
       let finalStatus = existing;
       if (existing !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-        Alert.alert("after request permissions:", finalStatus);
+        Alert.alert("Push Debug", `After request permission: ${finalStatus}`);
       }
 
       if (finalStatus !== "granted") {
-        console.warn("Permissions not granted for notifications");
-        Alert.alert("Notice", "Notifications permission not granted.");
+        Alert.alert("Push Debug", "Notifications permission not granted.");
         return null;
       }
 
-      // On Android, ensure channel is set
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("default", {
           name: "default",
           importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
         });
+        Alert.alert("Push Debug", "Android notification channel set.");
       }
 
-      const tokenData = await Notifications.getExpoPushTokenAsync();
-      Alert.alert("tokenData:", JSON.stringify(tokenData));
-      return tokenData.data ?? null;
-    } catch (err) {
-      console.error("Failed to get push token", err);
-      Alert.alert("Notice", JSON.stringify(err));
+      // Try Expo push token
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        const expoToken = (tokenData as any)?.data;
+        Alert.alert(
+          "Push Debug",
+          `getExpoPushTokenAsync returned: ${JSON.stringify(tokenData)}`,
+        );
+        if (expoToken) {
+          Alert.alert("Push Token", expoToken);
+          return expoToken;
+        }
+      } catch (e: any) {
+        Alert.alert(
+          "Push Debug",
+          `getExpoPushTokenAsync failed: ${e?.message ?? JSON.stringify(e)}`,
+        );
+      }
+
+      // Fallback: device push token
+      try {
+        // @ts-ignore
+        const deviceTokenResult = await Notifications.getDevicePushTokenAsync();
+        const deviceToken =
+          (deviceTokenResult as any)?.data ||
+          (deviceTokenResult as any)?.token ||
+          (deviceTokenResult as any)?.value;
+        Alert.alert(
+          "Push Debug",
+          `getDevicePushTokenAsync returned: ${JSON.stringify(deviceTokenResult)}`,
+        );
+        if (deviceToken) {
+          Alert.alert("Device Push Token", deviceToken);
+          return deviceToken;
+        }
+      } catch (e: any) {
+        Alert.alert(
+          "Push Debug",
+          `getDevicePushTokenAsync failed: ${e?.message ?? JSON.stringify(e)}`,
+        );
+      }
+
+      // Nothing worked
+      Alert.alert(
+        "Push Debug",
+        Platform.OS === "android"
+          ? "Unable to get push token. On Android ensure FCM is configured and use a standalone/EAS build (Expo Go may not return token)."
+          : "Unable to get push token. On iOS ensure push is configured and test on a physical device with a standalone/EAS build.",
+      );
+      return null;
+    } catch (err: any) {
+      Alert.alert(
+        "Push Debug",
+        `Unexpected error: ${err?.message ?? JSON.stringify(err)}`,
+      );
       return null;
     }
   };
@@ -145,12 +206,12 @@ export default function RegisterScreen() {
       alert(JSON.stringify(payload));
       // 3. Send to Node Backend using shared axios instance
       // Make sure to set the correct baseURL in src/utils/api.ts or call setApiBaseUrl at runtime.
-      const response = await api.post("/api/user/register", payload);
+      // const response = await api.post("/api/user/register", payload);
 
-      if (response.status === 201) {
-        Alert.alert("Success!", "Welcome to GreenLogic!");
-        router.replace("/login" as Href);
-      }
+      // if (response.status === 201) {
+      //   Alert.alert("Success!", "Welcome to GreenLogic!");
+      //   router.replace("/login" as Href);
+      // }
     } catch (error: any) {
       console.error("Registration error", error);
       const status = error?.response?.status;
